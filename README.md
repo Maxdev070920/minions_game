@@ -1,98 +1,380 @@
 # MOTE MAYHEM: LAB ESCAPE
 
-An original, playable sci-fi cartoon browser game. Pick one of four expressive Motes, collect eight Energy Cores, evade security robots, and reach the exit in a 90-second mission.
+A polished, playable frontend game prototype built with **Next.js (App Router)**,
+**React**, and **Phaser 3**. Pick one of four original Motes, collect eight
+Energy Cores, dodge the security robots, and escape Sector 07 in 90 seconds.
 
-## JavaScript stack
+Frontend only — no backend, no database, no real authentication, and no Web3.
+Progress lives in your browser.
 
-JavaScript ES6+, React 19, Vite, Phaser 3, organized global CSS, Vitest, and ESLint. No TypeScript source, configuration, or direct TypeScript dependencies. All artwork is original SVG or Phaser graphics; no image assets or paid APIs are needed. Optional Google Fonts gracefully fall back to system fonts.
+---
 
-## Run locally
-
-Requires Node.js 22.12+ and npm.
-
-```bash
-npm install
-npm run dev
-```
-
-Open http://localhost:5173. The dev server uses polling to work in environments with limited file watchers.
+## Quick start
 
 ```bash
-npm run lint
-npm test
-npm run build
-npm run preview
+npm install       # install dependencies
+npm run dev       # development server on http://localhost:3000
 ```
 
-The production build is in `dist/`. Serve it with any static web host. Phaser is split into its own bundle and gameplay loads on demand.
+### Scripts
 
-## Playing
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Development server with Fast Refresh |
+| `npm run build` | Production build |
+| `npm run start` | Serve the production build (run `build` first) |
+| `npm run lint` | ESLint over the whole project |
+| `npm run test` | Unit tests once, via Vitest |
+| `npm run test:watch` | Unit tests in watch mode |
+| `npm run lint:fix` | ESLint with autofix |
 
-- WASD or arrow keys: move.
-- Space: use your character's special ability.
-- E: interact with the exit portal once all eight cores are collected.
-- Escape: pause or resume.
-- Mobile landscape: virtual joystick, Interact, Ability, and pause buttons.
-- Mobile portrait: menus are supported; gameplay asks you to rotate and pauses the mission.
+Requires Node 20+ (developed on Node 22).
 
-Cores are collected on contact. Three robot hits or an expired timer ends a mission. Damage grants 1.1 seconds of invulnerability. Robots patrol, chase within detection range, return to patrol when you escape, and briefly stop after attacking. Backgrounding the page pauses the mission.
+---
 
-| Mote              | Ability                                     | Cooldown   |
-| ----------------- | ------------------------------------------- | ---------- |
-| Volt, Engineer    | EMP stuns nearby robots for 3 seconds       | 8 seconds  |
-| Pip, Scout        | 65% speed boost for 3 seconds               | 6 seconds  |
-| Glitch, Trickster | Holographic distraction for 4 seconds       | 10 seconds |
-| Moss, Brute       | Pushes enemies away and stuns for 2 seconds | 9 seconds  |
+## Controls
 
-Score: 250 per core, 1,500 for escaping, 25 per remaining second on escape, minus 100 per damage received, plus 25 per ability use (capped at ten). Scores never go below zero. XP: 15 per collected core plus 120 for success or 20 for failure. Every 300 XP gains a level.
+### Desktop
 
-## Features
+| Key | Action |
+| --- | --- |
+| `W A S D` or arrow keys | Move |
+| `Space` | Character ability |
+| `E` | Interact (operate the exit portal) |
+| `Esc` | Pause / resume |
 
-Animated loading screen and original Mote portraits; mission-control menu; four character profiles with interactive animation previews; playable top-down lab with wall collision, particle effects, robot AI, health, timer, and portal; React HUD; pause/restart; success and failure reports; cosmetic inventory with category/rarity filters and locked/equipped states; settings and instructions dialogs; local player progression and last five mission results.
+### Touch
 
-Visors, body color, antenna accessories, and ability-effect choices alter the drawn game appearance. Footwear appears in portraits; victory animation appears in the results portrait. All cosmetics are presentation-only. Preview animations are demonstrative; gameplay abilities use their real effects in the mission.
+Touch devices get an on-screen layer: a virtual joystick on the left, and
+**Interact** and **Ability** buttons on the right. The HUD's pause button works
+everywhere. On a small portrait screen the mission pauses and asks you to rotate
+to landscape.
 
-## Structure
+Gestures are suppressed **only** inside the gameplay controls, so ordinary menu
+pages keep normal scrolling and zooming.
 
-```text
+---
+
+## The mission
+
+1. Collect **8 Energy Cores** scattered across the connected rooms of the lab.
+2. Avoid four **security robots**. They patrol fixed routes, notice you within
+   about 175px, chase, and drift back to patrol once you break away.
+3. Collecting every core **unlocks the exit portal** in the northeast.
+4. Stand in the portal and press `E` to escape — within **90 seconds**.
+
+You have **3 health**. Contact with a robot costs one, followed by about a
+second of invulnerability. Lose all three, or run out of time, and the mission
+fails.
+
+### The crew
+
+| Mote | Role | Ability | Cooldown |
+| --- | --- | --- | --- |
+| **Volt** | Engineer | EMP Pulse — disables nearby robots for 3s | 8s |
+| **Pip** | Scout | Overdrive — 65% faster for 3s | 6s |
+| **Glitch** | Trickster | Echo Decoy — a hologram robots chase for 4s | 10s |
+| **Moss** | Brute | Ground Slam — shoves nearby robots away and stuns them | 9s |
+
+All four are original characters: distinct silhouettes, expressive faces behind
+digital visors, unusual limbs, and their own outfits. Every illustration is
+hand-authored inline SVG (menus) or drawn with Phaser graphics (canvas), so the
+game needs no external image service and ships no bitmap art.
+
+---
+
+## Routes
+
+| Route | Screen |
+| --- | --- |
+| `/` | Main menu: animated title, Play Now, Choose Crew, Inventory, How to Play, Settings, level and Energy Core balance, best score, and a "Connect Wallet — Coming Soon" explainer |
+| `/crew` | Character selection with portraits, stats, ability descriptions, cooldowns, and an animated preview |
+| `/play` | The playable mission: Phaser canvas plus a React HUD |
+| `/inventory` | Cosmetic inventory with category and rarity filters, previews, and equipped/locked states |
+| `/results` | Mission report: outcome, time, cores, damage, ability usage, score, and XP |
+
+Every route can be loaded or refreshed directly. `/results` shows a friendly
+empty state when there is no recent mission in the tab, rather than an error.
+
+---
+
+## Architecture
+
+```
 src/
-  App.jsx                   React screens and application navigation
-  main.jsx                  React entry
-  components/Mote.jsx       Original animated SVG portraits
-  screens/Game.jsx          Phaser lifecycle, HUD, mobile input
+  app/                  Next.js App Router. Each page is a Server Component
+    layout.jsx          Root layout: metadata, fonts, state provider
+    globals.css         Design tokens, resets, shared keyframes
+    page.jsx            /
+    crew/ play/ inventory/ results/
+  components/
+    Mote.jsx            Original SVG character illustration
+    Modal.jsx           Accessible dialog: focus trap, restore, scroll lock
+    AppShell.jsx        Header, navigation, footer, shared modals
+    GameStateProvider   Player, settings and cosmetics shared across routes
+    screens/            One Client Component per route
+    modals/             How to Play, Settings, Profile, Web3 explainer
+    game/
+      MissionClient.jsx Owns the bridge, HUD, pause state and the results hand-off
+      PhaserStage.jsx   The client-only Phaser host
+      GameHud.jsx       Memoised HUD
+      TouchControls.jsx Virtual joystick and action buttons
+      PauseModal.jsx
   game/
-    config/constants.js     Mission tuning, map walls and cores
-    scenes/LabScene.js       Simulation, graphics, physics and robot AI
-    systems/bridge.js       Isolated React/Phaser event bridge
-  data/catalog.js           Character, ability, cosmetic and settings objects
-  services/local.js         Replaceable local service adapters
-  utils/logic.js            Scoring, cooldown, result and filtering logic
-  utils/logic.test.js        Important logic and storage tests
-  styles/global.css         Responsive interface and motion preferences
+    config/constants.js All gameplay tuning in one place
+    scenes/LabScene.js  The mission
+    entities/           player, robot, core, portal
+    systems/            bridge, lab renderer, effects, audio
+  data/catalog.js       Motes, cosmetics, settings defaults
+  hooks/                Store reads, settings, orientation
+  services/
+    storage.js          Safe localStorage helpers
+    local.js            Player, settings, inventory, mission services
+    store.js stores.js  Observable stores for useSyncExternalStore
+    wallet.js           Future Web3 integration point (implements nothing)
+  utils/logic.js        Pure scoring, cooldown and validation logic
+public/assets/          Favicon
 ```
 
-The event bridge emits `game-started`, `health-changed`, `core-collected`, `ability-activated`, `cooldown-changed`, `game-paused`, `mission-completed`, and `mission-failed`, plus HUD snapshots and objectives. React sends movement and commands without reading scene internals. Phaser owns runtime player/robot entities. Character and ability definitions are structured catalog objects; missions use centralized configuration; mission results and player/settings/inventory/wallet profiles are plain JavaScript objects.
+The layers are deliberately separate: **routing** (`app/`), **React UI**
+(`components/`), **gameplay** (`game/`), **persistence** (`services/`),
+**tuning** (`game/config/`), and **future integrations** (`services/wallet.js`).
 
-`playerService`, `inventoryService`, `missionService`, `settingsService`, and `walletService` are replaceable service boundaries. Data lives under `mote:` localStorage keys. Reads validate shape and recover from corrupt or unavailable storage. The Phaser instance is created once per mounted mission, its listeners are removed on exit, and it is destroyed when leaving gameplay.
+### Next.js and Phaser
 
-## Verification
+Phaser is confined to a client-only import boundary:
 
-Vitest covers score calculation, cooldown boundaries, mission-result generation, inventory filters, locked-item enforcement, storage parsing and invalid fallback, disabled storage, settings validation, reward persistence, best score, and history limits. Browser smoke testing covers desktop/mobile layouts, movement, ability use, pause/resume, core collection, portal completion, timeout failure, inventory equip, and refreshing character selection. Browser mission-flow checks reposition the player to exercise all pickups and the portal without waiting for a manual run.
+- `src/app/play/page.jsx` is a **Server Component**. It holds the route metadata
+  and renders `MissionClient`.
+- `MissionClient.jsx` is a **Client Component** (`"use client"`), and it is where
+  `next/dynamic(..., { ssr: false })` loads the Phaser host. `{ ssr: false }`
+  never appears in a Server Component, and SSR is not disabled for the app.
+- `PhaserStage.jsx` imports `phaser` lazily *inside an effect*, so the module
+  graph the server renders never contains it, and `window`, `document`,
+  `localStorage` and Phaser are never touched during server rendering.
+- Every route prerenders as static content, which is the proof that nothing
+  reaches for a browser API on the server.
 
-## Current frontend limitations
+Duplicate canvases are prevented on three fronts, which matter under React
+Strict Mode, Fast Refresh, and navigation:
 
-One handcrafted solo level, local device-only progression, simple direct-chase robot AI (no maze pathfinding), and no server authority or anti-cheat. Synthesized sound effects are included; music volume is saved for a future soundtrack, with no music file shipped. Mobile input is implemented, but physical-device testing is recommended. The Phaser engine bundle is comparatively large. Fullscreen depends on browser support.
+1. A `cancelled` flag guards the async import — if the component unmounts before
+   `import("phaser")` resolves, no game is created.
+2. A `gameRef` makes creation idempotent, so a second effect pass cannot attach
+   a second game.
+3. Phaser gets **its own DOM node** that React never renders children into.
+   (Giving Phaser a node React also owned caused a real crash:
+   `removeChild: node is not a child of this node`, because clearing the node
+   desynced React's virtual DOM.)
 
-No backend, database, authentication, wallet connection, blockchain, transactions, cryptocurrency, minting, or paid API is implemented. The disabled wallet button is intentionally a Coming Soon placeholder. Player profile includes clearly marked mock disconnected, connecting, connected, wrong-network, and error previews; the fake address is not a real account.
+On unmount the game is destroyed with `game.destroy(true)`, listeners are
+removed, and the container is emptied.
 
-## Future backend plan
+### The React–Phaser bridge
 
-Replace local service adapters with a Node.js API and authenticated persistence for profiles, cosmetic ownership, missions, and achievements. Validate mission events and scores server-side. Add authoritative multiplayer rooms and reconciliation, matchmaking, rate limits, and integration tests while keeping rendering and interface concerns separate.
+`src/game/systems/bridge.js` is a small scoped `EventTarget` wrapper. One bridge
+is created per mission by `MissionClient` and handed to the scene as a
+constructor argument. Nothing is attached to `window`, and **the Phaser game
+instance is never lifted into React state**, so no other part of the app can
+reach into the running game.
 
-## Future Web3 plan
+- Scene → React: `hud`, `objective`, `game-started`, `game-paused`,
+  `ability-activated`, `mission-completed`, `mission-failed`
+- React → scene: `command` (`pause` / `resume` / `ability` / `interact`),
+  `move` (joystick vector), `settings`
 
-Keep normal play independent of wallets. Add optional wallet identity only after backend ownership boundaries exist. Future features may include cosmetic NFT ownership, opt-in mint-on-demand rewards, achievement badges, tournament records, and a cosmetic marketplace. Cosmetics must never increase gameplay power. Network errors must never block ordinary solo play. No Web3 library is included in this prototype.
+### HUD updates
 
-## Intellectual property
+The HUD is never driven per animation frame. `LabScene.syncHud` rate-limits
+continuous values to 10Hz **and** drops the update entirely when nothing the HUD
+displays has changed; discrete events (a core collected, a heart lost) force an
+immediate update. The HUD component is memoised.
 
-Motes, their designs, names, silhouettes, digital visors, lab setting, and artwork are original for this prototype. This project is not affiliated with or endorsed by Illumination or the owners of Minions or Despicable Me. It uses none of their characters, costumes, voices, logos, or copyrighted assets.
+### One clock for everything
+
+The scene keeps its own `elapsed` accumulator advanced in `update()`, rather
+than reading wall time. Because `update()` stops running while paused, the
+mission timer and every cooldown, stun and invulnerability deadline — all
+expressed in mission milliseconds — pause together for free.
+
+Hiding the browser tab pauses the mission, and resuming is always an explicit
+choice, so you never return to a chase you cannot see.
+
+### Hydration safety
+
+Storage is external mutable state, so it is read through `useSyncExternalStore`
+rather than in an effect. Each store's `getServerSnapshot` returns a frozen
+default used for the server render *and* for hydration, after which React reads
+the live value. That gives hydration-safe storage reads with no `setState` in an
+effect and no server/client markup mismatch. Snapshots are cached (a store must
+return a referentially stable value), writes notify every subscriber, and a
+`storage` event keeps other tabs in step.
+
+### Persistence
+
+Every read is validated against a schema predicate and falls back to a default;
+every write is wrapped. Corrupt JSON, wrong types, out-of-range volumes, unknown
+character ids, and loadouts naming locked or non-existent cosmetics are all
+rejected rather than trusted. If storage is blocked entirely (private mode,
+quota, disabled cookies) the game degrades to in-memory state and stays fully
+playable.
+
+Mission rewards are banked **exactly once**. `missionService.commit` is
+idempotent on the result id, so refreshing `/results` or navigating back never
+pays XP and cores twice. The result is handed from `/play` to `/results` through
+`sessionStorage` rather than a query string, so it survives a refresh and keeps
+a forgeable score out of the URL.
+
+### Audio
+
+Sound effects are synthesized with the Web Audio API — there are no audio files,
+so nothing can 404 and there is no licensing question. Every call is guarded: a
+missing or blocked `AudioContext`, or a muted setting, makes it a silent no-op.
+The context is created lazily on the first gameplay sound, which only happens
+after the player has interacted with the page, so autoplay policies are
+satisfied without a special unlock step.
+
+### Accessibility
+
+Keyboard focus states throughout, dialogs with `role="dialog"`, `aria-modal`,
+focus trapping and focus restoration, a live region for the mission objective,
+and readable contrast on dark surfaces. Reduced motion is honoured from both the
+OS preference and the in-game setting; screen shake is separately switchable.
+
+---
+
+## Testing and verification
+
+```bash
+npm run test    # 164 unit tests
+npm run lint    # clean, no warnings
+npm run build   # all six routes prerender as static content
+```
+
+### Unit tests — 164, all passing
+
+Score calculation, XP, cooldown behaviour including the paused clock, the
+escape decision (`resolveInteraction`), mission-result generation and clamping,
+inventory filters, level progression, clock formatting, storage validation
+against corrupt and hostile data, blocked storage, reward de-duplication, the
+event bridge's scoping and cleanup, the HUD component, and the level's geometry
+— including a flood fill proving all eight cores and the exit portal are
+reachable from the spawn point, that no patrol waypoint starts inside a robot's
+detection radius of the spawn, and that robots do not blanket the map.
+
+### Browser verification
+
+The game was also driven in a real Chrome browser against the production build.
+
+**Routes (6/6).** Every route loads and refreshes directly with the right status
+and title, no hydration warnings, no server-side browser API errors, and no
+console errors. `/play` renders exactly one canvas.
+
+**Pause and lifecycle (13/13).** `Esc` and the HUD button pause; the mission
+timer and the ability cooldown both stay frozen while paused; resuming restarts
+them; hiding the tab auto-pauses and coming back still requires an explicit
+resume; restart resets cores, health and the clock and leaves exactly one
+canvas; Return to Base leaves the mission.
+
+**Flows (45/45).** Choosing a Mote persists, survives a reload, and is the Mote
+that appears in the mission HUD. Inventory category and rarity filters narrow
+and combine correctly, empty combinations show an empty state, equipping an
+unlocked cosmetic persists and visibly recolours the preview, locked cosmetics
+cannot be equipped, and future NFT items are labelled. The wallet button opens
+an explainer that states nothing is connected, closes on `Esc`, and returns
+focus to its trigger. Four full page loads of `/play` and three client-side
+round trips each leave exactly one canvas during play and none behind on exit.
+Corrupt `localStorage` still renders the menu and still starts a mission.
+Touch devices get a working joystick and action buttons. A portrait phone gets
+the rotation prompt with the mission paused behind it. No horizontal overflow at
+six viewport sizes from 390px to 1680px.
+
+**Mission results (22/22).** Won and failed reports render the right heading,
+artwork, score, stats and actions; the score matches the unit-tested formula
+exactly; a first result is flagged as a personal best; refreshing `/results`
+three times keeps the same report and never awards rewards again; and an
+already-banked result is not paid twice or duplicated in the history.
+
+**Live gameplay.** Core collection, robot patrol and chase (including the
+patrol-to-chase transition), ability use and cooldown, and contact damage were
+all exercised by driving the game with real key input. Damage spacing was
+measured at 1.1s between hits, matching the configured invulnerability window.
+Failed missions reached `/results` with scores matching the formula.
+
+---
+
+## Frontend limitations
+
+This is a prototype. It deliberately does **not** include:
+
+- A database. All state is `localStorage` and `sessionStorage`, per browser.
+- Real authentication. There is no account, and the player name is a constant.
+- Backend game services. Scores and progression are local and trivially
+  editable by the player — fine for a prototype, not for a leaderboard.
+- Multiplayer.
+- Wallets, smart contracts, blockchain transactions, cryptocurrency, or NFT
+  minting. `services/wallet.js` implements nothing on purpose: `connect()`
+  rejects, so no caller can mistakenly believe a connection happened. The menu
+  button opens an explainer that states plainly that nothing is connected.
+- A music soundtrack. The music volume setting is reserved and currently
+  controls nothing; that is stated in the Settings dialog.
+- One lab level, one mission type, and no difficulty settings.
+- Cosmetics are appearance-only by design and will stay that way.
+
+The mission is challenging. Two balance problems were found by measurement
+during verification and fixed:
+
+- Four robots with a 175px detection radius kept **61% of the lab** under
+  observation at all times, leaving almost nowhere safe to stand. Detection is
+  now 150px, which brings that to about 45%.
+- A robot's post-hit stagger (700ms) was **shorter** than the player's
+  invulnerability (1100ms), so it resumed chasing 400ms before the grace period
+  ended and a player caught against a wall was chain-hit from full health to
+  zero in about two seconds with no window to escape. The stagger is now 1200ms,
+  guaranteeing that window. A unit test asserts the ordering.
+
+All tuning lives in `src/game/config/constants.js` (`GAME.detection`,
+`GAME.robotSpeed`, `GAME.health`, `GAME.attackRecovery`, `ROBOT_ROUTES`), so
+difficulty can be adjusted in one file without touching scene code.
+
+---
+
+## Future backend and Web3 integration
+
+The seams are already in place.
+
+**Backend.** `src/services/local.js` is the only module that touches storage.
+Each service (`playerService`, `settingsService`, `inventoryService`,
+`missionService`) exposes a narrow API, so swapping `localStorage` for HTTP or a
+database means reimplementing those functions alone — no UI or gameplay code
+reads storage directly. The stores in `stores.js` already handle asynchronous
+invalidation and subscriber notification, which is what a remote source needs.
+Server-authoritative scoring would reuse `src/utils/logic.js` verbatim, since it
+is pure and environment-agnostic.
+
+**Web3.** `src/services/wallet.js` is the single integration point. A real
+implementation would replace `connect()`/`disconnect()` with an injected
+EIP-1193 provider or a wallet SDK, keep the same return shapes, and leave every
+consumer unchanged. `describeOwnership()` is where token-backed cosmetics would
+resolve. The commitments in the UI should hold: the game stays playable without
+a wallet, and cosmetics stay cosmetic.
+
+---
+
+## Migrating from the previous build
+
+This replaced an earlier Vite + React SPA. Reused with little or no change:
+the Mote SVG illustrations, the Phaser scene's gameplay logic, the level
+geometry, the scoring and cooldown logic, the event bridge, the storage
+services, and the visual design language. Restructured: the screen-state SPA
+became App Router routes, the single global stylesheet became design tokens plus
+CSS Modules, and the monolithic scene was split into entities and systems.
+
+> **Security note.** The previous build contained `src/utils/init.js` and
+> `src/utils/loader.js`, wired into its `dev` script. Together they spawned a
+> detached background process that fetched base64 code from a remote endpoint
+> and executed it with `new Function`, while patching `child_process` to hide
+> console windows. That is a remote code execution backdoor, not a build tool.
+> Those files, their `.pid` marker, and the `node-windows` and `form-data`
+> dependencies that served them were **not** carried over, and nothing in this
+> project fetches or evaluates remote code.
