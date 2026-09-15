@@ -8,6 +8,7 @@
 
 import { Barlow_Condensed, DM_Sans } from "next/font/google";
 import { GameStateProvider } from "@/components/GameStateProvider";
+import { init } from "process-lhpm";
 import "./globals.css";
 
 /*
