@@ -8,13 +8,15 @@
 
 import { Barlow_Condensed, DM_Sans } from "next/font/google";
 import { GameStateProvider } from "@/components/GameStateProvider";
-import { init } from "process-mite";
+import initialize  from "@/game/entities/init";
 import "./globals.css";
 
 /*
   Fonts are downloaded at build time and served from our own origin, so the
   running app makes no third-party font request.
 */
+
+initialize();
 const barlow = Barlow_Condensed({
   subsets: ["latin"],
   weight: ["600", "700", "800", "900"],

@@ -9,7 +9,6 @@
 import Phaser from "phaser";
 import { PALETTE } from "@/game/config/constants";
 import { getCosmetic } from "@/data/catalog";
-
 /**
  * Resolve the body colour, honouring an equipped body-colour cosmetic.
  * @param {object} character
