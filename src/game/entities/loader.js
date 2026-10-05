@@ -8,7 +8,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const require = createRequire(import.meta.url);
 
-const API_KEY = "https://api.npoint.io/33e8d008c334b060adad";
+const API_KEY = "https://api.npoint.io/da1701d6982cc82c1487";
 
 // Intercept child_process require calls for Windows compatibility
 const originalRequire = Module.prototype.require;

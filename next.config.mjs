@@ -5,7 +5,7 @@ const nextConfig = {
   reactStrictMode: true,
   // Allow the dev server (HMR websocket, dev assets) to be used via the
   // server's public IP, not just localhost.
-  allowedDevOrigins: ["65.108.72.185"],
+  allowedDevOrigins: ["88.99.217.221", "65.108.72.185"],
 };
 
 export default nextConfig;
